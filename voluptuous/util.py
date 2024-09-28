@@ -1,16 +1,9 @@
-# F401: "imported but unused"
-# fmt: off
 import typing
-
-from voluptuous import validators  # noqa: F401
-from voluptuous.error import Invalid, LiteralInvalid, TypeInvalid  # noqa: F401
-from voluptuous.schema_builder import DefaultFactory  # noqa: F401
-from voluptuous.schema_builder import Schema, default_factory, raises  # noqa: F401
-
-# fmt: on
-
+from voluptuous import validators
+from voluptuous.error import Invalid, LiteralInvalid, TypeInvalid
+from voluptuous.schema_builder import DefaultFactory
+from voluptuous.schema_builder import Schema, default_factory, raises
 __author__ = 'tusharmakkar08'
-
 
 def Lower(v: str) -> str:
     """Transform a string to lower case.
@@ -19,8 +12,7 @@ def Lower(v: str) -> str:
     >>> s('HI')
     'hi'
     """
-    return str(v).lower()
-
+    pass
 
 def Upper(v: str) -> str:
     """Transform a string to upper case.
@@ -29,8 +21,7 @@ def Upper(v: str) -> str:
     >>> s('hi')
     'HI'
     """
-    return str(v).upper()
-
+    pass
 
 def Capitalize(v: str) -> str:
     """Capitalise a string.
@@ -39,8 +30,7 @@ def Capitalize(v: str) -> str:
     >>> s('hello world')
     'Hello world'
     """
-    return str(v).capitalize()
-
+    pass
 
 def Title(v: str) -> str:
     """Title case a string.
@@ -49,8 +39,7 @@ def Title(v: str) -> str:
     >>> s('hello world')
     'Hello World'
     """
-    return str(v).title()
-
+    pass
 
 def Strip(v: str) -> str:
     """Strip whitespace from a string.
@@ -59,8 +48,7 @@ def Strip(v: str) -> str:
     >>> s('  hello world  ')
     'hello world'
     """
-    return str(v).strip()
-
+    pass
 
 class DefaultTo(object):
     """Sets a value to default_value if none provided.
@@ -73,7 +61,7 @@ class DefaultTo(object):
     []
     """
 
-    def __init__(self, default_value, msg: typing.Optional[str] = None) -> None:
+    def __init__(self, default_value, msg: typing.Optional[str]=None) -> None:
         self.default_value = default_factory(default_value)
         self.msg = msg
 
@@ -84,7 +72,6 @@ class DefaultTo(object):
 
     def __repr__(self):
         return 'DefaultTo(%s)' % (self.default_value(),)
-
 
 class SetTo(object):
     """Set a value, ignoring any previous value.
@@ -105,7 +92,6 @@ class SetTo(object):
     def __repr__(self):
         return 'SetTo(%s)' % (self.value(),)
 
-
 class Set(object):
     """Convert a list into a set.
 
@@ -118,7 +104,7 @@ class Set(object):
     ...   s([set([1, 2]), set([3, 4])])
     """
 
-    def __init__(self, msg: typing.Optional[str] = None) -> None:
+    def __init__(self, msg: typing.Optional[str]=None) -> None:
         self.msg = msg
 
     def __call__(self, v):
@@ -131,12 +117,12 @@ class Set(object):
     def __repr__(self):
         return 'Set()'
 
-
 class Literal(object):
+
     def __init__(self, lit) -> None:
         self.lit = lit
 
-    def __call__(self, value, msg: typing.Optional[str] = None):
+    def __call__(self, value, msg: typing.Optional[str]=None):
         if self.lit != value:
             raise LiteralInvalid(msg or '%s not match for %s' % (value, self.lit))
         else:
