@@ -296,6 +296,7 @@ class Replace(object):
         return 'Replace(%r, %r, msg=%r)' % (self.pattern.pattern, self.substitution, self.msg)
 
 @message('expected an email address', cls=EmailInvalid)
+@message('expected an email address', cls=EmailInvalid)
 def Email(v):
     """Verify that the value is an email address or not.
 
@@ -309,8 +310,21 @@ def Email(v):
     >>> s('t@x.com')
     't@x.com'
     """
-    pass
+    try:
+        if not isinstance(v, str):
+            raise ValueError
+        user_part, domain_part = v.rsplit('@', 1)
+        if not user_part or not domain_part:
+            raise ValueError
+        if not re.match(r'^[\w\.\-\+]+$', user_part):
+            raise ValueError
+        if not DOMAIN_REGEX.match(domain_part):
+            raise ValueError
+    except ValueError:
+        raise EmailInvalid('expected an email address')
+    return v
 
+@message('expected a fully qualified domain name URL', cls=UrlInvalid)
 @message('expected a fully qualified domain name URL', cls=UrlInvalid)
 def FqdnUrl(v):
     """Verify that the value is a fully qualified domain name URL.
@@ -321,8 +335,17 @@ def FqdnUrl(v):
     >>> s('http://w3.org')
     'http://w3.org'
     """
-    pass
+    try:
+        parsed = urlparse.urlparse(v)
+        if not parsed.scheme or not parsed.netloc:
+            raise ValueError
+        if not DOMAIN_REGEX.match(parsed.netloc):
+            raise ValueError
+    except ValueError:
+        raise UrlInvalid('expected a fully qualified domain name URL')
+    return v
 
+@message('expected a URL', cls=UrlInvalid)
 @message('expected a URL', cls=UrlInvalid)
 def Url(v):
     """Verify that the value is a URL.
@@ -333,7 +356,13 @@ def Url(v):
     >>> s('http://w3.org')
     'http://w3.org'
     """
-    pass
+    try:
+        parsed = urlparse.urlparse(v)
+        if not parsed.scheme or not parsed.netloc:
+            raise ValueError
+    except ValueError:
+        raise UrlInvalid('expected a URL')
+    return v
 
 @message('Not a file', cls=FileInvalid)
 @truth
@@ -347,8 +376,10 @@ def IsFile(v):
     >>> with raises(FileInvalid, 'Not a file'):
     ...   IsFile()(None)
     """
-    pass
+    return os.path.isfile(v) if v is not None else False
 
+@message('Not a directory', cls=DirInvalid)
+@truth
 @message('Not a directory', cls=DirInvalid)
 @truth
 def IsDir(v):
@@ -359,7 +390,7 @@ def IsDir(v):
     >>> with raises(DirInvalid, 'Not a directory'):
     ...   IsDir()(None)
     """
-    pass
+    return os.path.isdir(v) if v is not None else False
 
 @message('path does not exist', cls=PathInvalid)
 @truth
@@ -373,7 +404,7 @@ def PathExists(v):
     >>> with raises(PathInvalid, 'Not a Path'):
     ...   PathExists()(None)
     """
-    pass
+    return os.path.exists(v) if v is not None else False
 
 def Maybe(validator: Schemable, msg: typing.Optional[str]=None):
     """Validate that the object matches given validator or is None.
@@ -388,7 +419,7 @@ def Maybe(validator: Schemable, msg: typing.Optional[str]=None):
     ...  s("string")
 
     """
-    pass
+    return lambda v: v if v is None else validator(v)
 
 class Range(object):
     """Limit a value to a range.
@@ -460,6 +491,11 @@ class Clamp(object):
         try:
             if self.min is not None and v < self.min:
                 v = self.min
+            if self.max is not None and v > self.max:
+                v = self.max
+            return v
+        except TypeError:
+            raise RangeInvalid(self.msg or 'invalid value or type (must have a partial ordering)')
             if self.max is not None and v > self.max:
                 v = self.max
             return v
@@ -792,10 +828,24 @@ class Number(object):
 
     def _get_precision_scale(self, number) -> typing.Tuple[int, int, Decimal]:
         """
-        :param number:
+        :param number: A string representation of a number
         :return: tuple(precision, scale, decimal_number)
         """
-        pass
+        try:
+            decimal_num = Decimal(number)
+        except InvalidOperation:
+            raise Invalid(self.msg or f'{number} is not a valid decimal number')
+
+        sign, digits, exponent = decimal_num.as_tuple()
+        
+        if exponent >= 0:
+            precision = len(digits) + exponent
+            scale = 0
+        else:
+            precision = len(digits)
+            scale = -exponent
+
+        return precision, scale, decimal_num
 
 class SomeOf(_WithSubValidators):
     """Value must pass at least some validations, determined by the given parameter.
